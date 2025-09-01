@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+   public function up(): void
+{
+    Schema::create('observacao', function (Blueprint $table) {
+        $table->id();
+
+        // Chave estrangeira para evento (jogo)
+        $table->foreignId('jogo_id')
+              ->constrained('evento')
+              ->onDelete('cascade');
+
+        // Chave estrangeira para utilizador
+        $table->foreignId('utilizador_id')
+              ->nullable()
+              ->constrained('users')
+              ->onDelete('set null');
+
+        $table->text('conteudo');
+        $table->timestamp('momento_jogo')->nullable();
+        $table->timestamps();
+    });
+}
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('observacao');
+    }
+};
