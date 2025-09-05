@@ -22,28 +22,39 @@ class EventoController extends Controller
 
    
     // A consulta está quase perfeita, apenas alteramos 'true' para true.
-    public function getJogosPassados(Request $request)
+    public function getJogos($isDone)
     {
-        $jogos = DB::table('eventos')
+        $today = Carbon::now();
+
+        $jogosQuery = DB::table('eventos')
             ->join('equipas', 'eventos.equipa_id', '=', 'equipas.id')
             ->where('eventos.tipo_evento', 1) // Tipo de evento para "Jogo"
-            ->where('eventos.realizado', true) // Só jogos marcados como realizados
             ->select(
                 'eventos.*',
+                'eventos.adversario',
                 'equipas.nome as nome_equipa',
                 'equipas.local_jogo as local_jogo_equipa'
-            )
-            ->get();
+            );
+        
+        // Se isDone for 'true', retorna jogos que já aconteceram.
+        // Se isDone for 'false', retorna jogos que ainda vão acontecer.
+        if ($isDone == 'true') {
+            $jogosQuery->where('eventos.data_hora_inicio', '<', $today);
+        } else {
+            $jogosQuery->where('eventos.data_hora_inicio', '>=', $today);
+        }
 
+        $jogos = $jogosQuery->get();
+        
         // Adiciona o novo atributo 'tipo_local' a cada jogo na coleção
         $jogos = $jogos->map(function ($jogo) {
             $jogo->tipo_local = ($jogo->local == $jogo->local_jogo_equipa) ? 'Em Casa' : 'Fora';
             return $jogo;
         });
 
-        dd($jogos);
         return response()->json($jogos);
     }
+
 }
 
 
