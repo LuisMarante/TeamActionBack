@@ -39,9 +39,9 @@ class EventoController extends Controller
         // Se isDone for 'true', retorna jogos que já aconteceram.
         // Se isDone for 'false', retorna jogos que ainda vão acontecer.
         if ($isDone == 'true') {
-            $jogosQuery->where('eventos.data_hora_inicio', '<', $today);
+            $jogosQuery->where('eventos.data_hora_fim', '<', $today);
         } else {
-            $jogosQuery->where('eventos.data_hora_inicio', '>=', $today);
+            $jogosQuery->where('eventos.data_hora_fim', '>=', $today);
         }
 
         $jogos = $jogosQuery->get();
