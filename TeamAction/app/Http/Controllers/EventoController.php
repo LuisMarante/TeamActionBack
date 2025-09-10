@@ -1,58 +1,132 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Evento;
-use App\Models\Equipa;
-use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Models\Evento;
 
 class EventoController extends Controller
 {
-    public function index()
+    /**
+     * Obtém uma lista de jogos com base nos parâmetros de pesquisa.
+     * Esta função é dinâmica e pode filtrar por múltiplos atributos.
+     *
+     * @param \Illuminate\Http\Request $request O pedido HTTP.
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+
+
+    public function getJogosPassados(Request $request)
     {
-        // Obtém todos os eventos da tabela 'eventos'.
-        // O método 'all()' é simples, mas para bases de dados maiores
-        // pode ser otimizado com paginação.
-        $eventos = Evento::all();
+        $query = Evento::with('equipa')
+            ->where('tipo_evento', 1)
+            ->where('data_hora_fim', '<', Carbon::now());
 
-        // Retorna a coleção de eventos como uma resposta JSON.
-        return response()->json($eventos);
-    }
 
-   
-    // A consulta está quase perfeita, apenas alteramos 'true' para true.
-    public function getJogos($isDone)
-    {
-        $today = Carbon::now();
+            // este código é para tratar um query parameter
+        if ($request->has('equipa_id')) {
 
-        $jogosQuery = DB::table('eventos')
-            ->join('equipas', 'eventos.equipa_id', '=', 'equipas.id')
-            ->where('eventos.tipo_evento', 1) // Tipo de evento para "Jogo"
-            ->select(
-                'eventos.*',
-                'eventos.adversario',
-                'equipas.nome as nome_equipa',
-                'equipas.local_jogo as local_jogo_equipa'
-            );
-        
-        // Se isDone for 'true', retorna jogos que já aconteceram.
-        // Se isDone for 'false', retorna jogos que ainda vão acontecer.
-        if ($isDone == 'true') {
-            $jogosQuery->where('eventos.data_hora_fim', '<', $today);
-        } else {
-            $jogosQuery->where('eventos.data_hora_fim', '>=', $today);
+            // Obtém os IDs do parâmetro de consulta, dividindo a string por vírgulas
+            $equipaIds = explode(',', $request->input('equipa_id'));
+
+            // Filtra os eventos onde o 'equipa_id' está na lista de IDs fornecidos
+            $query->whereIn('equipa_id', $equipaIds);
         }
 
-        $jogos = $jogosQuery->get();
-        
-        // Adiciona o novo atributo 'tipo_local' a cada jogo na coleção
-        $jogos = $jogos->map(function ($jogo) {
-            $jogo->tipo_local = ($jogo->local == $jogo->local_jogo_equipa) ? 'Em Casa' : 'Fora';
-            return $jogo;
+        $query->orderBy('data_hora_inicio', 'desc');
+
+        if ($request->has('limit') && is_numeric($request->input('limit'))) {
+            $query->take((int)$request->input('limit'));
+        }
+
+        $eventos = $query->get();
+
+        // Mapear os dados para o formato JSON desejado
+        $eventosFormatados = $eventos->map(function ($evento) {
+            // Formatar o ID para 'evt_123'
+
+
+            // Obter o nome da equipa, verificando se a relação existe
+            $nomeEquipa = $evento->equipa ? $evento->equipa->nome : null;
+
+            // Formatar a data e hora de início para o padrão ISO 8601
+            $dataHoraInicioFormatada = $evento->data_hora_inicio->toIso8601String();
+
+            // Construir o objeto de evento com as chaves de nome desejadas
+            return [
+                'id' => $evento->id,
+                'team_name' => $nomeEquipa,
+                'opponent_name' => $evento->adversario,
+                'start_datetime' => $dataHoraInicioFormatada,
+                'team_score' => $evento->golosEquipa,
+                'opponent_score' => $evento->golosAdversario,
+            ];
         });
 
-        return response()->json($jogos);
+        // Retornar a resposta JSON
+        return response()->json([
+            'events' => $eventosFormatados
+        ]);
+
+
+    }
+
+    public function getJogosFuturos(Request $request)
+    {
+        $query = Evento::with('equipa')
+            ->where('tipo_evento', 1)
+            ->where('data_hora_fim', '>', Carbon::now());
+
+
+            // este código é para tratar um query parameter
+        if ($request->has('equipa_id')) {
+
+            // Obtém os IDs do parâmetro de consulta, dividindo a string por vírgulas
+            $equipaIds = explode(',', $request->input('equipa_id'));
+
+            // Filtra os eventos onde o 'equipa_id' está na lista de IDs fornecidos
+            $query->whereIn('equipa_id', $equipaIds);
+        }
+
+        $query->orderBy('data_hora_inicio', 'desc');
+
+        if ($request->has('limit') && is_numeric($request->input('limit'))) {
+            $query->take((int)$request->input('limit'));
+        }
+
+        $eventos = $query->get();
+
+        // Mapear os dados para o formato JSON desejado
+        $eventosFormatados = $eventos->map(function ($evento) {
+            // Formatar o ID para 'evt_123'
+
+
+            // Obter o nome da equipa, verificando se a relação existe
+            $nomeEquipa = $evento->equipa ? $evento->equipa->nome : null;
+
+            // Formatar a data e hora de início para o padrão ISO 8601
+            $dataHoraInicioFormatada = $evento->data_hora_inicio->toIso8601String();
+
+            // Construir o objeto de evento com as chaves de nome desejadas
+            return [
+                'id' => $evento->id,
+                'team_name' => $nomeEquipa,
+                'opponent_name' => $evento->adversario,
+                'start_datetime' => $dataHoraInicioFormatada,
+                'team_score' => $evento->golosEquipa,
+                'opponent_score' => $evento->golosAdversario,
+            ];
+        });
+
+        // Retornar a resposta JSON
+        return response()->json([
+            'events' => $eventosFormatados
+        ]);
+
+
     }
 
 }

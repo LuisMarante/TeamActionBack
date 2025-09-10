@@ -12,3 +12,6 @@ Route::get('/eventos', [EventoController::class, 'index']);
 
 
 Route::get('/games/past/{isDone}', [EventoController::class, 'getJogos']);
+
+
+Route::get('/jogosPassados', [EventoController::class, 'getJogosPassados']);

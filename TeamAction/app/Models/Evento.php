@@ -21,6 +21,12 @@ class Evento extends Model
      * Os atributos que podem ser atribuídos em massa.
      * @var array<int, string>
      */
+
+     protected $attributes = [
+        'realizado' => false,
+        'estado' => 'Agendado',
+    ];
+
     protected $fillable = [
         'tipo_evento',
         'titulo',
@@ -32,11 +38,12 @@ class Evento extends Model
         'duracao',
         'local',
         'equipa_id',
-        'adversario',
+        'adversario_id',
         'visibilidade',
         'realizado',
         'golosEquipa',
         'golosAdversario',
+        'created_by',
     ];
 
     /**
@@ -49,5 +56,20 @@ class Evento extends Model
         'hora_inicio' => 'time',
         'hora_fim' => 'time',
     ];
+
+    public function equipa()
+    {
+        return $this->belongsTo(Equipa::class, 'equipa_id');
+    }
+
+    public function adversario()
+    {
+        return $this->belongsTo(Equipa::class, 'adversario_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }
 

@@ -26,6 +26,7 @@ class Equipa extends Model
         'modalidade',
         'genero',
         'clube_id',
+        'created_by',
     ];
 
     /**
@@ -36,6 +37,29 @@ class Equipa extends Model
     public function clube(): BelongsTo
     {
         return $this->belongsTo(Clube::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // Relação com o treinador (se tiveres)
+    public function treinador()
+    {
+        return $this->belongsTo(User::class, 'treinador_id');
+    }
+
+    // Relação com eventos
+    public function evento()
+    {
+        return $this->hasMany(Evento::class);
+    }
+
+    // Relação com eventos como adversário
+    public function eventosComoAdversario()
+    {
+        return $this->hasMany(Evento::class, 'adversario_id');
     }
 }
 
